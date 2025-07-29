@@ -36,13 +36,8 @@ try:
     driver.find_element(By.CSS_SELECTOR, "button[data-qa='login-button']").click()
     time.sleep(3)
 
-    try:
-        product_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[href='/products']")))
-        product_link.click()
-        time.sleep(3)
-    except:
-        driver.execute_script("window.location.href = '/products';")
-        time.sleep(3)
+    driver.find_element(By.CSS_SELECTOR, "a[href='/products']").click()
+    time.sleep(3)
 
     search_input = wait.until(EC.presence_of_element_located((By.ID, "search_product")))
     search_input.clear()
@@ -50,44 +45,52 @@ try:
     driver.find_element(By.ID, "submit_search").click()
     time.sleep(3)
 
+    product_blocks = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".single-products")))
+    
+    if len(product_blocks) < 2:
+        exit()
+
+    added_names = []
+
     for i in range(2):
-        add_buttons = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.add-to-cart")))
-        if i >= len(add_buttons):
+        product_blocks = driver.find_elements(By.CSS_SELECTOR, ".single-products")
+        if i >= len(product_blocks):
             break
 
+        name_element = product_blocks[i].find_element(By.CSS_SELECTOR, "div.productinfo p")
+        product_name = name_element.text
+
+        if product_name in added_names:
+            continue
+
+        add_button = product_blocks[i].find_element(By.CSS_SELECTOR, "a.add-to-cart")
+
         try:
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", add_buttons[i])
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", add_button)
             time.sleep(1)
-
-            try:
-                actions.move_to_element(add_buttons[i]).click().perform()
-            except:
-                driver.execute_script("arguments[0].click();", add_buttons[i])
-
-            time.sleep(2)
-
-            try:
-                close_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.close-modal")))
-                close_btn.click()
-            except:
-                pass
-            time.sleep(1)
-
+            actions.move_to_element(add_button).click().perform()
         except:
-            driver.execute_script("arguments[0].click();", add_buttons[i])
-            time.sleep(2)
+            driver.execute_script("arguments[0].click();", add_button)
 
-    try:
-        cart_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[href='/view_cart']")))
-        cart_link.click()
-        time.sleep(3)
-    except:
-        driver.execute_script("window.location.href = '/view_cart';")
-        time.sleep(3)
+        added_names.append(product_name)
+        time.sleep(2)
 
-    cart_products = driver.find_elements(By.CSS_SELECTOR, "tr td.cart_quantity button")
+        try:
+            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.close-modal"))).click()
+        except:
+            pass
+        time.sleep(1)
 
-    print(f"Nombre d'articles dans le panier : {len(cart_products)}")
+    driver.find_element(By.CSS_SELECTOR, "a[href='/view_cart']").click()
+    time.sleep(3)
+
+    cart_items = driver.find_elements(By.CSS_SELECTOR, "td.cart_description a")
+    cart_names = [item.text for item in cart_items]
+
+    if len(cart_names) >= 2 and cart_names[0] != cart_names[1]:
+        pass
+    else:
+        pass
 
 finally:
     driver.quit()

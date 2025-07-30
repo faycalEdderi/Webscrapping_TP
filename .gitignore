@@ -178,3 +178,4 @@ downloads/
 *.csv
 *.json
 *.xml
+credentials.txt
